@@ -19,33 +19,34 @@ export const App = () => {
   const [page, setPage] = useState(1);
   const KEY = '33187861-b0f031d63d8289b7509252611';
   const PER_PAGE = 12;
-  const URL = `https://pixabay.com/api/?key=${KEY}&q=${query}&page=${page}&image_type=photo&orientation=horizontal&per_page=${PER_PAGE}`;
 
   useEffect(() => {
+    async function fetch() {
+      await axios
+        .get(
+          `https://pixabay.com/api/?key=${KEY}&q=${query}&page=${page}&image_type=photo&orientation=horizontal&per_page=${PER_PAGE}`
+        )
+        .then(res => {
+          if (!res || res.data.hits.length === 0) {
+            Notify.warning('There are no matches for this query. Try again.');
+          } else if (query === '') {
+            return;
+          } else if (!isLoaded) {
+            setIsLoaded(true);
+            setItems(prevItems => [...prevItems, ...res.data.hits]);
+          }
+        })
+        .catch(err => {
+          console.warn(err);
+        });
+    }
+
     let timeout = setTimeout(() => {
-      fetch(URL);
+      fetch();
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [URL]);
-
-  const fetch = async url => {
-    const response = await axios
-      .get(url)
-      .then(res => {
-        if (!res || res.data.hits.length === 0) {
-          Notify.warning('There are no matches for this query. Try again.');
-        } else if (query === '') {
-          return;
-        } else if (!isLoaded) {
-          setIsLoaded(true);
-          setItems(prevItems => [...prevItems, ...res.data.hits]);
-        }
-      })
-      .catch(err => {
-        console.warn(err);
-      });
-  };
+  }, [query, isLoaded, page]);
 
   const handleSubmit = submitQuery => {
     if (submitQuery !== query) {
@@ -97,4 +98,3 @@ export const App = () => {
     </div>
   );
 };
-// }
